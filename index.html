@@ -1,0 +1,111 @@
+<html>
+  <head>
+    <style>
+      window, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        width: 100%;
+      }
+
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="start">
+      <button id="start-button" onclick="start()">start</button>
+    </div>
+    <div id="speedtest">
+      <pre id="speed-value"></pre>
+    </div>
+  </body>
+
+  <script>
+    let running = 0
+    let count = 0
+
+    let timerStart = Date.now()
+    let totalBytesReceived = 0
+
+    const setSpeed = (bytesPerSecond, n) => {
+      const e = document.getElementById('speed-value')
+
+      if(n < 10) {
+        e.textContent = '?'
+        return
+      }
+
+      const kbps = bytesPerSecond / 1024 * 8
+
+      if(kbps > 1024 * 1024) {
+        const gbps = kbps / 1024 / 1024
+        e.textContent = gbps.toFixed(gbps < 10 ? 1 : 0) + 'gbps'
+      } else if(kbps > 1024) {
+        const mbps = kbps / 1024
+        e.textContent = mbps.toFixed(mbps < 10 ? 1 : 0) + 'mbps'
+      } else {
+        e.textContent = kbps.toFixed(kbps < 10 ? 1 : 0) + 'kbps'
+      }
+    } 
+
+    const addReceivedBytes = (bytes) => {
+      totalBytesReceived += bytes
+    }
+
+    const avg = (values) => values.reduce((a, b) => a + b / values.length, 0)
+
+    let speedHistory = []
+
+    const start = () => {
+      document.getElementById('start').style = 'display: none'
+
+      let measureInterval = setInterval(() => {
+        let timeDiff = (Date.now() - timerStart) / 1000
+        let bytesPerSecond = totalBytesReceived / timeDiff
+        totalBytesReceived = 0
+        timerStart = Date.now()
+        if(speedHistory.length >= 20)
+          speedHistory.shift()
+        speedHistory.push(bytesPerSecond)
+        setSpeed(avg(speedHistory), speedHistory.length)
+      }, 100)
+      
+      let downloadInterval = setInterval(async () => {
+        if(running < 10) {
+          running++
+          const id=running
+          try {
+            const resp = await fetch('/data/100mb')
+            const reader = resp.body.getReader()
+            while(true) {
+              const data = await reader.read()
+              if(data.value) {
+                addReceivedBytes(data.value.length)
+              }
+              if(data.done) {
+                break
+              }
+            }
+          } finally {
+            running--
+          }
+        }
+      }, 100)
+    
+      setTimeout(() =>{
+        clearInterval(measureInterval)
+        clearInterval(downloadInterval)
+
+        document.getElementById('speed-value').textContent += ' done.'
+      }, 10000)
+    }
+
+    
+  </script>
+</html>
