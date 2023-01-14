@@ -81,7 +81,7 @@
           running++
           const id=running
           try {
-            const resp = await fetch('/data/100mb')
+            const resp = await fetch('/data/10mb')
             const reader = resp.body.getReader()
             while(true) {
               const data = await reader.read()
