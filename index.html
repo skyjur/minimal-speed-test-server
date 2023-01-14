@@ -29,6 +29,7 @@
   <script>
     let running = 0
     let count = 0
+    let done = false
 
     let timerStart = Date.now()
     let totalBytesReceived = 0
@@ -81,9 +82,15 @@
           running++
           const id=running
           try {
-            const resp = await fetch('/data/10mb')
+            const controller = new AbortController()
+            const resp = await fetch('/data/50mb', {signal: controller.signal})
             const reader = resp.body.getReader()
             while(true) {
+              if(done) {
+                await reader.cancel()
+                controller.abort()
+                break
+              }
               const data = await reader.read()
               if(data.value) {
                 addReceivedBytes(data.value.length)
@@ -96,9 +103,10 @@
             running--
           }
         }
-      }, 100)
+      }, 5)
     
       setTimeout(() =>{
+        done = true
         clearInterval(measureInterval)
         clearInterval(downloadInterval)
 

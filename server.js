@@ -19,8 +19,8 @@ const server = http.createServer(async (req, res) => {
       fs.readFile('index.html', {'encoding': 'utf-8'}, r))
     indexData && res.write(indexData)
     res.end()
-  } else if(url === '/data/10mb') {
-    const bytes = 1024 * 1024 * 10
+  } else if(url === '/data/50mb') {
+    const bytes = 1024 * 1024 * 50
     res.statusCode = 200
     res.setHeader('Content-Length', bytes.toFixed())
     res.flushHeaders()
